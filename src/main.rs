@@ -252,6 +252,11 @@ fn animate(
     let heuristics = all_heuristics(solve_state.board);
 
     let mut stdout = std::io::stdout();
+    ctrlc::set_handler(move || {
+        // Discard the error; we're in ctrl-c anyway
+        let _ = execute!(std::io::stdout(), Show);
+        std::process::exit(130);
+    })?;
     execute!(stdout, Hide)?;
 
     for solve_iter_item in solve_iter(solve_state, solve_args.strategy, &heuristics) {
