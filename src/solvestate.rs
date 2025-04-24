@@ -183,6 +183,20 @@ impl<'a> From<&'a QueensFile> for SolveState<'a> {
 impl SolveState<'_> {
     /// Returns whether the board is complete: that is, whether
     /// there are the same number of queens as their are rows/cols/colors.
+    ///
+    /// # Examples
+    /// ```
+    /// # use qsolve::file::QueensFile;
+    /// # use qsolve::solvestate::SolveState;
+    /// # use std::str::FromStr;
+    /// let qf_complete = QueensFile::from_str(&"wwww\nwkkk\nrrrr\nbbbb\n\nxQxx\nxxxQ\nQxxx\nxxQx").unwrap();
+    /// let ss_complete = SolveState::from(&qf_complete);
+    /// assert!(ss_complete.complete());
+    ///
+    /// let qf_incomplete = QueensFile::from_str(&"wwww\nwkkk\nrrrr\nbbbb\n\nxQxx\nxxxQ\nQxxx\nxx.x").unwrap();
+    /// let ss_incomplete = SolveState::from(&qf_incomplete);
+    /// assert!(!ss_incomplete.complete());
+    /// ```
     pub fn complete(&self) -> bool {
         self.squares
             .iter()
@@ -198,6 +212,20 @@ impl SolveState<'_> {
     /// * No row contains multiple queens.
     /// * No color contains multiple queens.
     /// * No queens border each other.
+    ///
+    /// # Examples
+    /// ```
+    /// # use qsolve::file::QueensFile;
+    /// # use qsolve::solvestate::SolveState;
+    /// # use std::str::FromStr;
+    /// let qf_valid = QueensFile::from_str(&"wwww\nwkkk\nrrrr\nbbbb\n\nxQxx\nxxxQ\nQxxx\nxxQx").unwrap();
+    /// let ss_valid = SolveState::from(&qf_valid);
+    /// assert!(ss_valid.is_valid());
+    ///
+    /// let qf_invalid = QueensFile::from_str(&"wwww\nwkkk\nrrrr\nbbbb\n\nxQxx\nQxxx\nQxxx\nxxQx").unwrap();
+    /// let ss_invalid = SolveState::from(&qf_invalid);
+    /// assert!(!ss_invalid.is_valid());
+    /// ```
     pub fn is_valid(&self) -> bool {
         let size = self.board.size();
         let rows_valid = (0..size).all(|r| {
