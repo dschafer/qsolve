@@ -5,11 +5,17 @@ use std::{
 
 use anyhow::Result;
 use clap::{Args, Parser, Subcommand, ValueEnum};
+use crossterm::{
+    cursor::{Hide, MoveUp, Show},
+    execute,
+    style::Print,
+    terminal::Clear,
+};
 use log::debug;
-use qsolve::datastructure::CoordSet;
 use qsolve::heuristic::{Heuristic, all_heuristics};
 use qsolve::share::generate_share_content;
 use qsolve::solvestate::{Charset, SolveState, SolveStrategy};
+use qsolve::{datastructure::CoordSet, solveiter::SolveIterItem};
 use qsolve::{file::QueensFile, solveiter::solve_iter};
 
 #[derive(Parser)]
@@ -172,6 +178,68 @@ fn print(path_args: &PathCli, display_args: &DisplayCli) -> Result<()> {
     Ok(())
 }
 
+/// Helper function to print a given [SolveIterItem] as part of the
+/// animate command.
+fn print_animated_iter_item(
+    solve_iter_item: &SolveIterItem,
+    charset: Charset,
+    delay: Duration,
+) -> Result<()> {
+    let mut stdout = std::io::stdout();
+    let size: u16 = (solve_iter_item.solve_state.board.size())
+        .try_into()
+        .unwrap();
+
+    execute!(
+        stdout,
+        Print(
+            solve_iter_item
+                .solve_state
+                .ansi_string(CoordSet::default(), charset)
+                .unwrap()
+        ),
+        Print("\n"),
+    )?;
+    std::thread::sleep(delay);
+    execute!(
+        stdout,
+        MoveUp(size),
+        Print(
+            solve_iter_item
+                .solve_state
+                .ansi_string(
+                    solve_iter_item
+                        .next_heuristic
+                        .map(|h| h.seen_coords(&solve_iter_item.solve_state))
+                        .unwrap_or_default(),
+                    charset
+                )
+                .unwrap()
+        ),
+        Print("\n"),
+        Clear(crossterm::terminal::ClearType::CurrentLine),
+        Print(
+            solve_iter_item
+                .next_heuristic
+                .map_or("Done!\n".to_string(), Heuristic::description)
+        ),
+        Print("\n"),
+    )?;
+    if solve_iter_item.next_heuristic.is_none() {
+        return Ok(());
+    }
+    std::thread::sleep(delay);
+    execute!(
+        stdout,
+        MoveUp(1),
+        Clear(crossterm::terminal::ClearType::CurrentLine),
+        MoveUp(1),
+        Clear(crossterm::terminal::ClearType::CurrentLine),
+        MoveUp(size),
+    )?;
+    Ok(())
+}
+
 /// Top-level entry point for the animate subcommand.
 fn animate(
     path_args: &PathCli,
@@ -182,56 +250,19 @@ fn animate(
     let queens_file = queens_file_from_path(path_args)?;
     let solve_state = SolveState::from(&queens_file);
     let heuristics = all_heuristics(solve_state.board);
-    println!("{}", termion::cursor::Hide);
-    let _hc = termion::cursor::HideCursor::from(std::io::stdout());
-    let end_state = solve_iter(solve_state, solve_args.strategy, &heuristics)
-        .inspect(|ss| {
-            println!(
-                "{}",
-                ss.solve_state
-                    .ansi_string(CoordSet::default(), display_args.charset)
-                    .unwrap()
-            );
-            std::thread::sleep(*delay);
-            println!(
-                "\r{}\r",
-                termion::cursor::Up((ss.solve_state.board.size() + 1).try_into().unwrap())
-            );
-            println!(
-                "{}",
-                ss.solve_state
-                    .ansi_string(
-                        ss.next_heuristic
-                            .map(|h| h.seen_coords(&ss.solve_state))
-                            .unwrap_or_default(),
-                        display_args.charset
-                    )
-                    .unwrap()
-            );
-            println!(
-                "{}{}",
-                termion::clear::CurrentLine,
-                ss.next_heuristic
-                    .map_or("Done!".to_string(), Heuristic::description)
-            );
-            std::thread::sleep(*delay);
-            println!(
-                "{}{}{}{}{}",
-                termion::cursor::Up(1),
-                termion::clear::CurrentLine,
-                termion::cursor::Up(1),
-                termion::clear::CurrentLine,
-                termion::cursor::Up((ss.solve_state.board.size() + 1).try_into().unwrap())
-            );
-        })
-        .last()
-        .unwrap();
-    println!(
-        "{}",
-        end_state
-            .solve_state
-            .ansi_string(CoordSet::default(), display_args.charset)?
-    );
+
+    let mut stdout = std::io::stdout();
+    ctrlc::set_handler(move || {
+        // Discard the error; we're in ctrl-c anyway
+        let _ = execute!(std::io::stdout(), Show);
+        std::process::exit(130);
+    })?;
+    execute!(stdout, Hide)?;
+
+    for solve_iter_item in solve_iter(solve_state, solve_args.strategy, &heuristics) {
+        print_animated_iter_item(&solve_iter_item, display_args.charset, *delay)?;
+    }
+    execute!(stdout, Show)?;
     Ok(())
 }
 
