@@ -186,8 +186,7 @@ impl SolveState<'_> {
     pub fn complete(&self) -> bool {
         self.squares
             .iter()
-            .filter_map(|&x| x.map(|sv| sv == SquareVal::Queen))
-            .filter(|x| *x)
+            .filter(|&&x| x == Some(SquareVal::Queen))
             .count()
             == self.board.size()
     }
