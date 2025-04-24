@@ -21,13 +21,13 @@ maintenance.status = "as-is"
 [dependencies]
 anyhow = "1.0.95"
 clap = { version = "4.5.27", features = ["derive"] }
+crossterm = "0.29.0"
 doc-comment = "0.3.3"
 env_logger = "0.11.6"
 image = "0.25.6"
 itertools = "0.14.0"
 log = "0.4.25"
 owo-colors = "4.1.0"
-termion = "4.0.3"
 
 [dev-dependencies]
 assert_cmd = "2.0.17"
