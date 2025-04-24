@@ -1,6 +1,6 @@
 [package]
 name = "qsolve"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Dan Schafer <dan.schafer@gmail.com>"]
 edition = "2024"
 description = "A command-line tool for solving Queens puzzles"
