@@ -93,10 +93,10 @@ impl QueensFile {
     /// a QueensFile from it.
     pub fn try_from_text_file(path: &std::path::PathBuf) -> Result<Self> {
         let content = std::fs::read_to_string(path)
-            .with_context(|| format!("Could not read file `{:?}`", path))?;
+            .with_context(|| format!("Could not read file `{path:?}`"))?;
 
         QueensFile::from_str(&content)
-            .with_context(|| format!("Failed to create board from text file at {:?}", path))
+            .with_context(|| format!("Failed to create board from text file at {path:?}"))
     }
 
     /// This reads the given path as an image file and attempts to return
@@ -105,7 +105,7 @@ impl QueensFile {
         let rgb_image = ImageReader::open(path)?.decode()?.to_rgb8();
 
         analyze_grid_image(&rgb_image)
-            .with_context(|| format!("Failed to create board from image at {:?}", path))
+            .with_context(|| format!("Failed to create board from image at {path:?}"))
     }
 }
 
@@ -154,7 +154,7 @@ mod tests {
     fn input_squares_display() -> Result<()> {
         let input_str = "Qxxx\nxx..\nx...\nx...";
         let input_squares = InputSquares::from_str(input_str)?;
-        assert_eq!(format!("{}", input_squares), input_str.replace(".", " "));
+        assert_eq!(format!("{input_squares}"), input_str.replace(".", " "));
         Ok(())
     }
 

@@ -142,7 +142,7 @@ impl Display for SquareColor {
             SquareColor::BrightCyan => 'C',
             SquareColor::BrightWhite => 'W',
         };
-        write!(f, "{}", c)
+        write!(f, "{c}")
     }
 }
 
@@ -188,7 +188,7 @@ mod tests {
     #[test]
     fn squarecolor_char_roundtrip() {
         for sc in ALL_SQUARE_COLORS {
-            let c = format!("{}", sc).chars().next().unwrap();
+            let c = format!("{sc}").chars().next().unwrap();
             assert_eq!(SquareColor::try_from(c).unwrap(), sc)
         }
     }

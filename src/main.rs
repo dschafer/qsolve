@@ -371,7 +371,7 @@ fn profile(path_args: &PathCli, solve_args: &SolveCli, iterations: &usize) -> Re
         solve_iter(solve_state, solve_args.strategy, &heuristics).for_each(drop);
     }
     let elapsed = start_time.elapsed();
-    println!("{} iterations completed in {:?}", iterations, elapsed);
+    println!("{iterations} iterations completed in {elapsed:?}");
     Ok(())
 }
 

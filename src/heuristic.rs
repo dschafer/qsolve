@@ -77,8 +77,7 @@ pub fn next_heuristic<'h>(
     heuristics: &'h [Box<dyn Heuristic>],
 ) -> Option<&'h dyn Heuristic> {
     debug!(
-        "Generating next heuristic with {:?} strategy",
-        solve_strategy
+        "Generating next heuristic with {solve_strategy:?} strategy"
     );
     let h = match solve_strategy {
         SolveStrategy::Short => heuristics
@@ -127,7 +126,7 @@ pub fn all_heuristics(board: &Board) -> Vec<Box<dyn Heuristic>> {
     v.extend(board.all_colors().iter().map(|color| {
         Box::new(LastSquareAvailable {
             coords: board.coords_for_color(color),
-            desc: format!("'{:?}' Color", color),
+            desc: format!("'{color:?}' Color"),
         }) as _
     }));
     v.extend((0..board.size()).map(|r| {
@@ -157,7 +156,7 @@ pub fn all_heuristics(board: &Board) -> Vec<Box<dyn Heuristic>> {
     v.extend(board.all_colors().into_iter().map(|color| {
         Box::new(AllPossibilitiesEliminateSquare {
             coords: board.coords_for_color(color),
-            desc: format!("'{:?}' Color", color),
+            desc: format!("'{color:?}' Color"),
         }) as _
     }));
 
@@ -186,7 +185,7 @@ pub fn all_heuristics(board: &Board) -> Vec<Box<dyn Heuristic>> {
             .filter(|cc| !cc.is_empty())
             .map(|cc| {
                 Box::new(NColorsOnlyAppearInNLines {
-                    color_desc: format!("{:?}", cc),
+                    color_desc: format!("{cc:?}"),
                     colors: SquareColorSet::from_iter(cc.into_iter().copied()),
                     liner: |coord| coord.0,
                     liner_desc: "rows".to_string(),
@@ -201,7 +200,7 @@ pub fn all_heuristics(board: &Board) -> Vec<Box<dyn Heuristic>> {
             .filter(|cc| !cc.is_empty())
             .map(|cc| {
                 Box::new(NColorsOnlyAppearInNLines {
-                    color_desc: format!("{:?}", cc),
+                    color_desc: format!("{cc:?}"),
                     colors: SquareColorSet::from_iter(cc.into_iter().copied()),
                     liner: |coord| coord.1,
                     liner_desc: "cols".to_string(),
@@ -223,7 +222,7 @@ impl Heuristic for LastSquareAvailable {
         self.coords
     }
     fn changes(&self, solve_state: &SolveState) -> Option<Changes> {
-        trace!("Heuristic Start: LastSquareAvailable {:?}", self);
+        trace!("Heuristic Start: LastSquareAvailable {self:?}");
         let last_empty_coord = self
             .coords
             .iter()
@@ -231,14 +230,14 @@ impl Heuristic for LastSquareAvailable {
             .exactly_one()
             .ok();
         let queen = last_empty_coord?;
-        trace!("Heuristic Success: LastSquareAvailable {:?}", self);
+        trace!("Heuristic Success: LastSquareAvailable {self:?}");
         let x = solve_state
             .board
             .queen_borders(&queen)
             .iter()
             .filter(|&coord| solve_state.square(&coord).is_none())
             .collect::<CoordSet>();
-        trace!("Heuristic Return: LastSquareAvailable {:?}", self);
+        trace!("Heuristic Return: LastSquareAvailable {self:?}");
         Some(Changes::AddQueen { queen, x })
     }
 
@@ -265,8 +264,7 @@ impl Heuristic for AllPossibilitiesEliminateSquare {
     }
     fn changes(&self, solve_state: &SolveState) -> Option<Changes> {
         trace!(
-            "Heuristic Start: AllPossibilitiesEliminateSquare {:?}",
-            self
+            "Heuristic Start: AllPossibilitiesEliminateSquare {self:?}"
         );
         let x = self
             .coords
@@ -282,8 +280,7 @@ impl Heuristic for AllPossibilitiesEliminateSquare {
             None
         } else {
             trace!(
-                "Heuristic Success/Return: AllPossibilitiesEliminateSquare {:?}",
-                self
+                "Heuristic Success/Return: AllPossibilitiesEliminateSquare {self:?}"
             );
             Some(Changes::AddX { x })
         }
@@ -312,14 +309,14 @@ impl Heuristic for NLinesContainOnlyNColors {
             .collect()
     }
     fn changes(&self, solve_state: &SolveState) -> Option<Changes> {
-        trace!("Heuristic Start: NLinesContainOnlyNColors {:?}", self);
+        trace!("Heuristic Start: NLinesContainOnlyNColors {self:?}");
         if self
             .lines
             .iter()
             .flatten()
             .any(|coord| solve_state.square(&coord) == Some(SquareVal::Queen))
         {
-            trace!("Heuristic Invalid: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic Invalid: NLinesContainOnlyNColors {self:?}");
             return None;
         }
         let coords = CoordSet::from_iter(
@@ -331,10 +328,10 @@ impl Heuristic for NLinesContainOnlyNColors {
         let colors_set =
             SquareColorSet::from_iter(coords.iter().map(|coord| solve_state.board.color(&coord)));
         if colors_set.len() > self.lines.len() {
-            trace!("Heuristic Invalid: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic Invalid: NLinesContainOnlyNColors {self:?}");
             return None;
         }
-        trace!("Heuristic Success: NLinesContainOnlyNColors {:?}", self);
+        trace!("Heuristic Success: NLinesContainOnlyNColors {self:?}");
         let x = solve_state
             .board
             .all_coords()
@@ -344,10 +341,10 @@ impl Heuristic for NLinesContainOnlyNColors {
             .filter(|coord| solve_state.square(coord).is_none())
             .collect::<CoordSet>();
         if x.is_empty() {
-            trace!("Heuristic No-op: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic No-op: NLinesContainOnlyNColors {self:?}");
             None
         } else {
-            trace!("Heuristic Return: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic Return: NLinesContainOnlyNColors {self:?}");
             Some(Changes::AddX { x })
         }
     }
@@ -380,7 +377,7 @@ impl Heuristic for NColorsOnlyAppearInNLines {
             .collect()
     }
     fn changes(&self, solve_state: &SolveState) -> Option<Changes> {
-        trace!("Heuristic Start: NLinesContainOnlyNColors {:?}", self);
+        trace!("Heuristic Start: NLinesContainOnlyNColors {self:?}");
         if solve_state
             .board
             .all_coords()
@@ -388,7 +385,7 @@ impl Heuristic for NColorsOnlyAppearInNLines {
             .filter(|coord| self.colors.contains(&solve_state.board.color(coord)))
             .any(|coord| solve_state.square(&coord) == Some(SquareVal::Queen))
         {
-            trace!("Heuristic Invalid: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic Invalid: NLinesContainOnlyNColors {self:?}");
             return None;
         }
         let coords = solve_state.board.all_coords();
@@ -399,10 +396,10 @@ impl Heuristic for NColorsOnlyAppearInNLines {
             .map(self.liner);
         let lines_set = LineSet::from_iter(lines);
         if lines_set.len() > self.colors.len() {
-            trace!("Heuristic Invalid: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic Invalid: NLinesContainOnlyNColors {self:?}");
             return None;
         }
-        trace!("Heuristic Success: NLinesContainOnlyNColors {:?}", self);
+        trace!("Heuristic Success: NLinesContainOnlyNColors {self:?}");
         let x = solve_state
             .board
             .all_coords()
@@ -412,10 +409,10 @@ impl Heuristic for NColorsOnlyAppearInNLines {
             .filter(|coord| solve_state.square(coord).is_none())
             .collect::<CoordSet>();
         if x.is_empty() {
-            trace!("Heuristic No-op: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic No-op: NLinesContainOnlyNColors {self:?}");
             None
         } else {
-            trace!("Heuristic Return: NLinesContainOnlyNColors {:?}", self);
+            trace!("Heuristic Return: NLinesContainOnlyNColors {self:?}");
             Some(Changes::AddX { x })
         }
     }

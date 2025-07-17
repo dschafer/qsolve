@@ -84,7 +84,7 @@ const X_OTHER_RATIO: f32 = 0.01;
 /// # }
 /// ```
 pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
-    trace!("Analyze grid image start: {:?}", img);
+    trace!("Analyze grid image start: {img:?}");
     let width_ranges = find_grid_ranges(img, 0..img.width(), true);
     ensure!(
         width_ranges.len() >= 4,
@@ -110,8 +110,7 @@ pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
     let mut square_values = Vec::with_capacity(board_size * board_size);
 
     trace!(
-        "Analyze grid image ranges found: {:?} {:?}",
-        width_ranges, height_ranges
+        "Analyze grid image ranges found: {width_ranges:?} {height_ranges:?}"
     );
     for (height_range, width_range) in iproduct!(height_ranges, width_ranges) {
         let view = img.view(
@@ -128,8 +127,7 @@ pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
             )
         })?;
         trace!(
-            "Analyze grid image color: for height {:?} width {:?} got dominant color {:?}",
-            height_range, width_range, rgb_color
+            "Analyze grid image color: for height {height_range:?} width {width_range:?} got dominant color {rgb_color:?}"
         );
         all_rgb_colors.push(rgb_color);
 
@@ -140,8 +138,7 @@ pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
             _ => None,
         };
         trace!(
-            "Analyze grid image ratio: For height {:?} width {:?} got ratio {:?} and value {:?}",
-            height_range, width_range, other_ratio, square_val
+            "Analyze grid image ratio: For height {height_range:?} width {width_range:?} got ratio {other_ratio:?} and value {square_val:?}"
         );
         square_values.push(square_val);
     }
@@ -175,8 +172,8 @@ pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
     let board = Board::new(board_size, colors);
     let squares = InputSquares::from(square_values);
     trace!("Analyze grid image done.");
-    trace!("Board:\n{}", board);
-    trace!("Squares:\n{}", squares);
+    trace!("Board:\n{board}");
+    trace!("Squares:\n{squares}");
     Ok(QueensFile {
         board,
         squares: Some(squares),

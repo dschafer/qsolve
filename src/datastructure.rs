@@ -411,7 +411,7 @@ mod tests {
         assert!(!sqs.is_empty());
         assert!(sqs.contains(&SquareColor::Black));
         assert!(!sqs.contains(&SquareColor::Red));
-        assert_eq!(format!("{}", sqs), "[Black, Blue, White]");
+        assert_eq!(format!("{sqs}"), "[Black, Blue, White]");
     }
 
     #[test]
@@ -422,7 +422,7 @@ mod tests {
         assert!(ls.contains(&0));
         assert!(!ls.contains(&1));
         assert_eq!(ls.iter().collect::<Vec<_>>(), vec![0, 2, 5]);
-        assert_eq!(format!("{}", ls), "[0, 2, 5]");
+        assert_eq!(format!("{ls}"), "[0, 2, 5]");
     }
 
     #[test]
@@ -433,7 +433,7 @@ mod tests {
         assert!(cs.contains(&(0, 0)));
         assert!(!cs.contains(&(5, 5)));
         assert_eq!(cs.iter().collect::<Vec<_>>(), vec![(0, 0), (1, 1), (2, 4)]);
-        assert_eq!(format!("{}", cs), "[(0, 0), (1, 1), (2, 4)]");
+        assert_eq!(format!("{cs}"), "[(0, 0), (1, 1), (2, 4)]");
         cs.extend([(5, 5)]);
         assert!(cs.contains(&(5, 5)));
     }
