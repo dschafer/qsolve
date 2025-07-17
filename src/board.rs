@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, bail};
 use itertools::{Itertools, Position, iproduct};
 
 use crate::{
@@ -352,9 +352,9 @@ impl FromStr for Board {
             if line.len() != size {
                 let row_num = line_num + 1;
                 let row_len = line.len();
-                return Err(anyhow!(
+                bail!(
                     "Invalid board: row {row_num} has {row_len} entries but the board is {size} rows long."
-                ));
+                );
             }
         }
         let colors = lines

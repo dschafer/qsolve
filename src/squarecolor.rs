@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, bail};
 use owo_colors::AnsiColors;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -94,7 +94,7 @@ impl TryFrom<char> for SquareColor {
             'M' => Ok(SquareColor::BrightMagenta),
             'C' => Ok(SquareColor::BrightCyan),
             'W' => Ok(SquareColor::BrightWhite),
-            _ => Err(anyhow!("Unknown color char: {}", value)),
+            _ => bail!("Unknown color char: {}", value),
         }
     }
 }

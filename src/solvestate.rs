@@ -1,6 +1,6 @@
 use std::fmt::{Display, Formatter, Write};
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, bail};
 use clap::ValueEnum;
 use itertools::{Itertools, Position};
 use log::trace;
@@ -55,7 +55,7 @@ impl SquareVal {
             ' ' => Ok(None),
             '.' => Ok(None),
             '_' => Ok(None),
-            _ => Err(anyhow!("Blank")),
+            _ => bail!("Blank"),
         }
     }
 }
