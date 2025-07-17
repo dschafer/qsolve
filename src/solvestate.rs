@@ -97,7 +97,7 @@ pub enum SolveStrategy {
 
 impl Display for SolveStrategy {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
+        write!(f, "{self:?}")
     }
 }
 
@@ -174,7 +174,7 @@ impl<'a> From<&'a QueensFile> for SolveState<'a> {
             solve_state.apply_changes(&Changes::AddQueen { queen, x });
         }
 
-        trace!("From<QueensFile> for SolveState done:\n{}", solve_state);
+        trace!("From<QueensFile> for SolveState done:\n{solve_state}");
 
         solve_state
     }
@@ -384,13 +384,13 @@ mod tests {
     fn solvestate_from_queens_file() {
         let board_str = "wwww\nkkkk\nrrrr\nbbbb";
         let squares_str = "Qxxx\nxx..\nx...\nx. _";
-        let qf_str = format!("{}\n\n{}", board_str, squares_str);
+        let qf_str = format!("{board_str}\n\n{squares_str}");
         let qf = QueensFile::from_str(&qf_str).unwrap();
         let ss = SolveState::from(&qf);
         assert!(ss.is_valid());
 
         assert_eq!(
-            format!("{}", ss),
+            format!("{ss}"),
             qf_str.replace(".", " ").replace("_", " ")
         );
     }
@@ -399,7 +399,7 @@ mod tests {
     fn solvestate_ansi_string() {
         let board_str = "wwww\nkkkk\nrrrr\nbbbb";
         let squares_str = "Qxxx\nxx..\nx...\nx. _";
-        let qf_str = format!("{}\n\n{}", board_str, squares_str);
+        let qf_str = format!("{board_str}\n\n{squares_str}");
         let qf = QueensFile::from_str(&qf_str).unwrap();
         let ss = SolveState::from(&qf);
         assert!(ss.is_valid());
@@ -417,7 +417,7 @@ mod tests {
     fn solvestate_ansi_string_highlighted() {
         let board_str = "wwww\nkkkk\nrrrr\nbbbb";
         let squares_str = "Qxxx\nxx..\nx...\nx. _";
-        let qf_str = format!("{}\n\n{}", board_str, squares_str);
+        let qf_str = format!("{board_str}\n\n{squares_str}");
         let qf = QueensFile::from_str(&qf_str).unwrap();
         let ss = SolveState::from(&qf);
         assert!(ss.is_valid());

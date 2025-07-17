@@ -58,15 +58,14 @@ pub fn generate_share_content(
         .collect::<Vec<_>>();
 
     let puzzle_name = if puzzle_name.chars().all(char::is_numeric) {
-        format!("#{}", puzzle_name)
+        format!("#{puzzle_name}")
     } else {
         puzzle_name.to_string()
     };
 
     let mut output = String::new();
     output.push_str(&format!(
-        "QSolve {} | {:?} and flawless\n",
-        puzzle_name, elapsed
+        "QSolve {puzzle_name} | {elapsed:?} and flawless\n"
     ));
     output.push_str(&format!(
         "First \u{1f451}s: {}\n",

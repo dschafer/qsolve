@@ -407,7 +407,7 @@ mod tests {
         let board = board_result.unwrap();
         assert_eq!(board.size(), 4);
         assert_eq!(board.square_count(), 16);
-        assert_eq!(format!("{}", board), board_str);
+        assert_eq!(format!("{board}"), board_str);
     }
 
     #[test]
