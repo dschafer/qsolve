@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use anyhow::{Context, Result, bail, ensure};
+use anyhow::{Context, Result, ensure};
 use image::ImageReader;
 
 use crate::{
@@ -57,13 +57,12 @@ impl FromStr for InputSquares {
         let lines = s.trim().lines().collect::<Vec<_>>();
         let size = lines.len();
         for (line_num, &line) in lines.iter().enumerate() {
-            if line.len() != size {
-                let row_num = line_num + 1;
-                let row_len = line.len();
-                bail!(
-                    "Invalid solve state squares: row {row_num} has {row_len} entries but the board is {size} rows long."
-                );
-            }
+            ensure!(
+                line.len() == size,
+                "Invalid solve state squares: row {row_num} has {row_len} entries but the board is {size} rows long.",
+                row_num = line_num + 1,
+                row_len = line.len()
+            );
         }
         let solve_state_squares = lines
             .into_iter()
