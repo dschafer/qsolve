@@ -19,7 +19,7 @@ with a few key characteristics:
 
 ## Installation
 
-`qsolve` can be installed from [crates.io](crates.io) by running
+`qsolve` can be installed from [crates.io](https://crates.io/crates/qsolve) by running
 
 ```sh
 cargo install qsolve
