@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use anyhow::{Result, anyhow};
+use anyhow::{Result, ensure};
 use itertools::{Itertools, Position, iproduct};
 
 use crate::{
@@ -349,13 +349,12 @@ impl FromStr for Board {
         let lines = s.trim().lines().collect::<Vec<_>>();
         let size = lines.len();
         for (line_num, &line) in lines.iter().enumerate() {
-            if line.len() != size {
-                let row_num = line_num + 1;
-                let row_len = line.len();
-                return Err(anyhow!(
-                    "Invalid board: row {row_num} has {row_len} entries but the board is {size} rows long."
-                ));
-            }
+            ensure!(
+                line.len() == size,
+                "Invalid board: row {row_num} has {row_len} entries but the board is {size} rows long.",
+                row_num = line_num + 1,
+                row_len = line.len()
+            );
         }
         let colors = lines
             .into_iter()

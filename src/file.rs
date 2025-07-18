@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{Context, Result, ensure};
 use image::ImageReader;
 
 use crate::{
@@ -57,13 +57,12 @@ impl FromStr for InputSquares {
         let lines = s.trim().lines().collect::<Vec<_>>();
         let size = lines.len();
         for (line_num, &line) in lines.iter().enumerate() {
-            if line.len() != size {
-                let row_num = line_num + 1;
-                let row_len = line.len();
-                return Err(anyhow!(
-                    "Invalid solve state squares: row {row_num} has {row_len} entries but the board is {size} rows long."
-                ));
-            }
+            ensure!(
+                line.len() == size,
+                "Invalid solve state squares: row {row_num} has {row_len} entries but the board is {size} rows long.",
+                row_num = line_num + 1,
+                row_len = line.len()
+            );
         }
         let solve_state_squares = lines
             .into_iter()
@@ -115,16 +114,15 @@ impl FromStr for QueensFile {
     fn from_str(s: &str) -> Result<Self> {
         let lines = s.trim().lines().collect::<Vec<_>>();
         let lines_len = lines.len();
-        if lines_len == 0 {
-            return Err(anyhow!("Invalid solve state: no lines found."));
-        }
+        ensure!(lines_len != 0, "Invalid solve state: no lines found.");
+
         let size = lines[0].len();
         let is_squares_formatted = lines_len == (1 + size * 2) && lines[size].is_empty();
-        if lines_len != size && !is_squares_formatted {
-            return Err(anyhow!(
-                "Invalid solve state: {lines_len} lines for size {size}."
-            ));
-        }
+        ensure!(
+            lines_len == size || is_squares_formatted,
+            "Invalid solve state: {lines_len} lines for size {size}."
+        );
+
         let board = Board::from_str(&lines[0..size].join("\n"))?;
         let squares = if is_squares_formatted {
             Some(InputSquares::from_str(
