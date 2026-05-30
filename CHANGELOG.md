@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#15](https://github.com/dschafer/qsolve/issues/15) to be solved without
   forcing chains.
 
+### Fixed
+
+- Give out-of-range values passed to bitset-backed sets consistent, descriptive panics.
+
 ## [1.0.0] - 2025-04-23
 
 ### Added
