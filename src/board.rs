@@ -7,7 +7,7 @@ use anyhow::{Result, ensure};
 use itertools::{Itertools, Position, iproduct};
 
 use crate::{
-    datastructure::{Coord, CoordSet},
+    datastructure::{Coord, CoordSet, MAX_SET_SIZE},
     squarecolor::SquareColor,
 };
 
@@ -69,6 +69,7 @@ pub struct Board {
     size: usize,
     colors: Vec<SquareColor>,
     coords: CoordSet,
+    color_coords: [CoordSet; MAX_SET_SIZE],
     queen_borders: Vec<CoordSet>,
 }
 
@@ -92,10 +93,15 @@ impl Board {
             "Colors must be equal to size*size"
         );
         let coords = iproduct!(0..size, 0..size).collect::<CoordSet>();
+        let mut color_coords = [CoordSet::default(); MAX_SET_SIZE];
+        for (idx, color) in colors.iter().enumerate() {
+            color_coords[*color as usize].add((idx / size, idx % size));
+        }
         let mut board = Board {
             size,
             colors,
             coords,
+            color_coords,
             queen_borders: vec![],
         };
         board.compute_queen_borders();
@@ -210,10 +216,7 @@ impl Board {
     /// # }
     /// ```
     pub fn coords_for_color(&self, color: &SquareColor) -> CoordSet {
-        self.all_coords()
-            .iter()
-            .filter(|&coord| self.color(&coord) == *color)
-            .collect()
+        self.color_coords[*color as usize]
     }
 
     /// Returns a list of all [Coord]s in the grid.
@@ -302,9 +305,8 @@ impl Board {
                     .filter(|coord| coord != queen),
             );
             hs.extend(
-                self.all_coords()
+                self.coords_for_color(&self.color(queen))
                     .iter()
-                    .filter(|coord| self.color(coord) == self.color(queen))
                     .filter(|coord| coord != queen),
             );
             if queen.0 > 0 && queen.1 > 0 {
