@@ -1,9 +1,13 @@
-use std::fmt::{Display, Formatter, Write};
+#[cfg(feature = "ansi-colors")]
+use std::fmt::Write;
+use std::fmt::{Display, Formatter};
 
 use anyhow::{Result, bail};
+#[cfg(feature = "clap")]
 use clap::ValueEnum;
 use itertools::{Itertools, Position};
 use log::trace;
+#[cfg(feature = "ansi-colors")]
 use owo_colors::{AnsiColors, OwoColorize};
 
 use crate::{
@@ -83,7 +87,8 @@ impl SquareVal {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "clap", derive(ValueEnum))]
 /// What strategy to use for solving the puzzle
 pub enum SolveStrategy {
     /// Optimize for generating a solution quickly
@@ -101,7 +106,8 @@ impl Display for SolveStrategy {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "clap", derive(ValueEnum))]
 /// What characters to use in the animation
 pub enum Charset {
     /// Uses ASCII characters; Q for queens, x for impossible
@@ -297,6 +303,7 @@ impl SolveState<'_> {
 
     /// Returns a string colored by OwoColorize that represents the
     /// SolveState, highlighting the given Coordinates.
+    #[cfg(feature = "ansi-colors")]
     pub fn ansi_string(&self, highlight: CoordSet, charset: Charset) -> Result<String> {
         let mut f = String::new();
         for row_num in 0..self.board.size() {

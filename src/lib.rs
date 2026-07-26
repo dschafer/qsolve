@@ -52,6 +52,7 @@ pub mod file;
 pub mod heuristic;
 
 /// Image parsing logic to allow screenshots of Queens games to be used.
+#[cfg(feature = "image")]
 pub mod image;
 
 /// Iterators for moving through the process of solving a game.
@@ -67,5 +68,7 @@ pub mod squarecolor;
 pub mod share;
 
 // Use doc_comment to ensure code snippets in the readme compile.
+#[cfg(feature = "doc")]
 extern crate doc_comment;
+#[cfg(feature = "doc")]
 doc_comment::doctest!("../README.md");

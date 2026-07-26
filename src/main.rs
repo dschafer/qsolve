@@ -1,3 +1,6 @@
+#[cfg(not(feature = "bin"))]
+compile_error!("In order to compile the binary please enable the feature \"bin\".");
+
 use std::{
     ffi::OsStr,
     time::{Duration, Instant},

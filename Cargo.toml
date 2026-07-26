@@ -20,21 +20,29 @@ maintenance.status = "as-is"
 
 [dependencies]
 anyhow = "1.0.95"
-clap = { version = "4.5.27", features = ["derive"] }
-crossterm = "0.29.0"
-ctrlc = "3.4.6"
-doc-comment = "0.3.3"
-env_logger = "0.11.6"
-image = "0.25.6"
+clap = { version = "4.5.27", features = ["derive"], optional = true }
+crossterm = { version = "0.29.0", optional = true }
+ctrlc = { version = "3.4.6", optional = true }
+doc-comment = { version = "0.3.3", optional = true }
+env_logger = { version = "0.11.6", optional = true }
+image = { version = "0.25.6", optional = true }
 itertools = "0.14.0"
 log = "0.4.25"
-owo-colors = "4.1.0"
+owo-colors = { version = "4.1.0", optional = true }
 
 [dev-dependencies]
 assert_cmd = "2.0.17"
 criterion = { version = "0.5", features = ["html_reports"] }
 predicates = "3.1.3"
 regex = "1.11.1"
+
+[features]
+default = ["ansi-colors", "bin", "clap", "doc", "image"]
+ansi-colors = ["dep:owo-colors"]
+bin = ["ansi-colors", "clap", "image", "dep:crossterm", "dep:ctrlc", "dep:env_logger"]
+clap = ["dep:clap"]
+doc = ["dep:doc-comment"]
+image = ["dep:image"]
 
 [profile.release]
 debug = true

@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 
 use anyhow::{Result, bail};
+#[cfg(feature = "ansi-colors")]
 use owo_colors::AnsiColors;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -99,6 +100,7 @@ impl TryFrom<char> for SquareColor {
     }
 }
 
+#[cfg(feature = "ansi-colors")]
 impl From<SquareColor> for AnsiColors {
     fn from(c: SquareColor) -> AnsiColors {
         match c {
@@ -172,6 +174,7 @@ impl SquareColor {
     /// This returns the ideal foreground color for the given square color.
     ///
     /// It will always be one of [AnsiColors::Black] and [AnsiColors::BrightWhite]
+    #[cfg(feature = "ansi-colors")]
     pub fn fg_color(&self) -> AnsiColors {
         match self {
             SquareColor::Black => AnsiColors::BrightWhite,
