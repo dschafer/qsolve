@@ -27,6 +27,13 @@ cargo install qsolve
 
 Alternately, the binary can be downloaded directly from [Github releases](https://github.com/dschafer/qsolve/releases).
 
+## Features
+
+This exposes two features:
+
+- **`cli`** *(enabled by default)* — Functionality for the `qsolve` CLI binary.
+- **`image`** *(enabled by default)* — Ability to analyze image files.
+
 ## Command line example
 
 Basic usage of the command line tool looks something like this:

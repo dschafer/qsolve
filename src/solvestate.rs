@@ -1,7 +1,6 @@
 use std::fmt::{Display, Formatter, Write};
 
 use anyhow::{Result, bail};
-use clap::ValueEnum;
 use itertools::{Itertools, Position};
 use log::trace;
 use owo_colors::{AnsiColors, OwoColorize};
@@ -83,7 +82,8 @@ impl SquareVal {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 /// What strategy to use for solving the puzzle
 pub enum SolveStrategy {
     /// Optimize for generating a solution quickly
@@ -101,7 +101,8 @@ impl Display for SolveStrategy {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[cfg_attr(feature = "cli", derive(clap::ValueEnum))]
 /// What characters to use in the animation
 pub enum Charset {
     /// Uses ASCII characters; Q for queens, x for impossible

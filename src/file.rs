@@ -1,11 +1,13 @@
 use std::{fmt::Display, str::FromStr};
 
 use anyhow::{Context, Result, ensure};
+#[cfg(feature = "image")]
 use image::ImageReader;
 
+#[cfg(feature = "image")]
+use crate::image::analyze_grid_image;
 use crate::{
     board::Board,
-    image::analyze_grid_image,
     solvestate::{Charset, SquareVal},
 };
 
@@ -100,6 +102,7 @@ impl QueensFile {
 
     /// This reads the given path as an image file and attempts to return
     /// a QueensFile from it.
+    #[cfg(feature = "image")]
     pub fn try_from_image_file(path: &std::path::PathBuf) -> Result<Self> {
         let rgb_image = ImageReader::open(path)?.decode()?.to_rgb8();
 
