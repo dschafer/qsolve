@@ -16,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - name: Check formatting
+        run: cargo fmt --check
       - name: Build
         run: cargo build --verbose
       - name: Run tests
@@ -28,6 +30,8 @@ jobs:
           cargo test --no-default-features --features image
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features
+      - name: Verify package
+        run: cargo package --locked
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Generate code coverage
