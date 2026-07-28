@@ -118,6 +118,7 @@ enum FileType {
     /// Force text file parsing
     Text,
     /// Force image file parsing
+    #[cfg(feature = "image")]
     Image,
 }
 
@@ -153,9 +154,13 @@ struct SolveCli {
 fn queens_file_from_path(path_args: &PathCli) -> Result<QueensFile> {
     let qf = match path_args.file_type {
         FileType::Text => QueensFile::try_from_text_file(&path_args.path),
+        #[cfg(feature = "image")]
         FileType::Image => QueensFile::try_from_image_file(&path_args.path),
+        #[cfg(feature = "image")]
         FileType::Auto => QueensFile::try_from_text_file(&path_args.path)
             .or_else(|_| QueensFile::try_from_image_file(&path_args.path)),
+        #[cfg(not(feature = "image"))]
+        FileType::Auto => QueensFile::try_from_text_file(&path_args.path),
     }?;
     if path_args.clear {
         Ok(QueensFile {

@@ -23,6 +23,7 @@ fn print_succeeds_when_clearing() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "image")]
 #[test]
 fn print_succeeds_on_image() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("qsolve")?;
@@ -43,6 +44,7 @@ fn print_fails_on_bad_file() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "image")]
 #[test]
 fn print_accepts_image_file_type() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("qsolve")?;
@@ -67,6 +69,7 @@ fn print_accepts_text_file_type() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[cfg(feature = "image")]
 #[test]
 fn print_fails_on_bad_file_type() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("qsolve")?;
@@ -74,6 +77,19 @@ fn print_fails_on_bad_file_type() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("print")
         .arg("games/linkedin-1-empty.txt")
         .arg("--file-type=image"); // This is backward by design!
+    cmd.assert().failure();
+
+    Ok(())
+}
+
+#[cfg(not(feature = "image"))]
+#[test]
+fn print_rejects_image_file_type_without_image_feature() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("qsolve")?;
+
+    cmd.arg("print")
+        .arg("games/linkedin-1.png")
+        .arg("--file-type=image");
     cmd.assert().failure();
 
     Ok(())
