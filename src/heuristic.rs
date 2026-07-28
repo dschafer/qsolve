@@ -76,9 +76,7 @@ pub fn next_heuristic<'h>(
     solve_strategy: SolveStrategy,
     heuristics: &'h [Box<dyn Heuristic>],
 ) -> Option<&'h dyn Heuristic> {
-    debug!(
-        "Generating next heuristic with {solve_strategy:?} strategy"
-    );
+    debug!("Generating next heuristic with {solve_strategy:?} strategy");
     let h = match solve_strategy {
         SolveStrategy::Short => heuristics
             .iter()
@@ -263,9 +261,7 @@ impl Heuristic for AllPossibilitiesEliminateSquare {
             .collect()
     }
     fn changes(&self, solve_state: &SolveState) -> Option<Changes> {
-        trace!(
-            "Heuristic Start: AllPossibilitiesEliminateSquare {self:?}"
-        );
+        trace!("Heuristic Start: AllPossibilitiesEliminateSquare {self:?}");
         let x = self
             .coords
             .iter()
@@ -279,9 +275,7 @@ impl Heuristic for AllPossibilitiesEliminateSquare {
         if x.is_empty() {
             None
         } else {
-            trace!(
-                "Heuristic Success/Return: AllPossibilitiesEliminateSquare {self:?}"
-            );
+            trace!("Heuristic Success/Return: AllPossibilitiesEliminateSquare {self:?}");
             Some(Changes::AddX { x })
         }
     }

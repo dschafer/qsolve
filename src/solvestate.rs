@@ -389,10 +389,7 @@ mod tests {
         let ss = SolveState::from(&qf);
         assert!(ss.is_valid());
 
-        assert_eq!(
-            format!("{ss}"),
-            qf_str.replace(".", " ").replace("_", " ")
-        );
+        assert_eq!(format!("{ss}"), qf_str.replace(".", " ").replace("_", " "));
     }
 
     #[test]

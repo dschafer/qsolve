@@ -109,9 +109,7 @@ pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
     let mut all_rgb_colors = Vec::with_capacity(board_size * board_size);
     let mut square_values = Vec::with_capacity(board_size * board_size);
 
-    trace!(
-        "Analyze grid image ranges found: {width_ranges:?} {height_ranges:?}"
-    );
+    trace!("Analyze grid image ranges found: {width_ranges:?} {height_ranges:?}");
     for (height_range, width_range) in iproduct!(height_ranges, width_ranges) {
         let view = img.view(
             width_range.start,
