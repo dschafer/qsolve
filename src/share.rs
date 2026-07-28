@@ -69,7 +69,7 @@ pub fn generate_share_content(
     ));
     output.push_str(&format!(
         "First \u{1f451}s: {}\n",
-        &queens_order[0..3]
+        queens_order[0..3]
             .iter()
             .map(|x| (*x).to_unicode_block().to_string())
             .collect::<Vec<String>>()
