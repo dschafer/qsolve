@@ -1,4 +1,5 @@
 #![warn(missing_docs)]
+#![cfg_attr(doctest, doc = include_str!("../README.md"))]
 
 //! A library for solving Queens puzzles
 //!
@@ -65,7 +66,3 @@ pub mod squarecolor;
 
 /// Logic to generate the share text for a solved puzzle.
 pub mod share;
-
-// Use doc_comment to ensure code snippets in the readme compile.
-extern crate doc_comment;
-doc_comment::doctest!("../README.md");

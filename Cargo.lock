@@ -1191,7 +1191,6 @@ dependencies = [
  "criterion",
  "crossterm",
  "ctrlc",
- "doc-comment",
  "env_logger",
  "image",
  "itertools 0.14.0",
