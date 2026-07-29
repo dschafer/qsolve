@@ -54,7 +54,7 @@ impl SquareVal {
             ' ' => Ok(None),
             '.' => Ok(None),
             '_' => Ok(None),
-            _ => bail!("Blank"),
+            _ => bail!("Invalid square value character: {c:?}"),
         }
     }
 }
@@ -372,6 +372,14 @@ mod tests {
                 !unicode_highlighted_char.is_ascii() || unicode_highlighted_char.is_whitespace()
             );
         }
+    }
+
+    #[test]
+    fn squareval_reports_invalid_character() {
+        assert_eq!(
+            SquareVal::try_from('S').unwrap_err().to_string(),
+            "Invalid square value character: 'S'"
+        );
     }
 
     #[test]

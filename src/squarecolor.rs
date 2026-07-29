@@ -7,8 +7,8 @@ use owo_colors::AnsiColors;
 /// Represents a color that can appear on the board.
 ///
 /// There are 16 possible colors, corresponding to the 16 ANSI colors
-/// that most termianls support. The most critical traits and methods implemented on this
-/// enum allow for easy converstion to and from different representations:
+/// that most terminals support. The most critical traits and methods implemented on this
+/// enum allow for easy conversion to and from different representations:
 ///
 /// * `TryFrom<char>` for [SquareColor] allows for conversion from a [char] representation to a [SquareColor]. This is most notably used in parsing a [Board][crate::board::Board].
 /// * `From<SquareColor>` for [AnsiColors] allows for conversion from a [SquareColor] to an [AnsiColors] for printing squares to the terminal.
@@ -16,7 +16,7 @@ use owo_colors::AnsiColors;
 ///
 /// Each color is represented by a [char]. The [char] is the first character of the color
 /// for all colors other than black; for black, we use 'k' (since 'b' is already used for blue,
-/// and 'k' matches the CMYK tradition).Normal colors are lower-cased, and bright colors are
+/// and 'k' matches the CMYK tradition). Normal colors are lower-cased, and bright colors are
 /// upper-cased (so "Bright Red" would be 'R').
 pub enum SquareColor {
     /// The Black ANSI color, represented by [char] 'k'.
@@ -29,7 +29,7 @@ pub enum SquareColor {
     Yellow,
     /// The Blue ANSI color, represented by [char] 'b'.
     Blue,
-    /// The Magenta ANSI color, represented by [char] 'k'.
+    /// The Magenta ANSI color, represented by [char] 'm'.
     Magenta,
     /// The Cyan ANSI color, represented by [char] 'c'.
     Cyan,
@@ -45,7 +45,7 @@ pub enum SquareColor {
     BrightYellow,
     /// The Bright Blue ANSI color, represented by [char] 'B'.
     BrightBlue,
-    /// The Bright Magenta ANSI color, represented by [char] 'K'.
+    /// The Bright Magenta ANSI color, represented by [char] 'M'.
     BrightMagenta,
     /// The Bright Cyan ANSI color, represented by [char] 'C'.
     BrightCyan,
@@ -53,7 +53,7 @@ pub enum SquareColor {
     BrightWhite,
 }
 
-/// A convinience const that contains all square colors once.
+/// A convenience constant that contains every square color once.
 pub const ALL_SQUARE_COLORS: [SquareColor; 16] = [
     SquareColor::Black,
     SquareColor::Red,
