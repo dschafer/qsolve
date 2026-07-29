@@ -14,7 +14,7 @@ use crate::{heuristic::Changes, solveiter::SolveIterItem};
 ///
 /// # Examples
 /// ```
-/// # use std::path::PathBuf;
+/// # use std::str::FromStr;
 /// # use std::time::Instant;
 /// # use qsolve::heuristic::all_heuristics;
 /// # use qsolve::file::QueensFile;
@@ -24,7 +24,7 @@ use crate::{heuristic::Changes, solveiter::SolveIterItem};
 /// # fn solve() -> Result<(), Box<dyn std::error::Error>> {
 ///     // Solve a puzzle, while timing it.
 ///     let start_time = Instant::now();
-///     let queens_file = QueensFile::try_from_text_file(&PathBuf::from("games/linkedin-1-empty.txt"))?;
+///     let queens_file = QueensFile::from_str("wwww\nwkkk\nrrrr\nbbbb")?;
 ///     let solve_state = SolveState::from(&queens_file);
 ///     let heuristics = all_heuristics(solve_state.board);
 ///     let solve_vec = solve_iter(solve_state, SolveStrategy::Fast, &heuristics).collect::<Vec<_>>();
@@ -82,7 +82,7 @@ pub fn generate_share_content(
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::str::FromStr;
 
     use anyhow::Result;
 
@@ -95,10 +95,11 @@ mod tests {
 
     use super::*;
 
+    const PUZZLE: &str = "wwww\nwkkk\nrrrr\nbbbb";
+
     #[test]
     fn generate_share_content_works() -> Result<()> {
-        let queens_file =
-            QueensFile::try_from_text_file(&PathBuf::from("games/linkedin-1-empty.txt"))?;
+        let queens_file = QueensFile::from_str(PUZZLE)?;
         let solve_state = SolveState::from(&queens_file);
         let heuristics = all_heuristics(solve_state.board);
         let state_iter_items =
@@ -111,7 +112,7 @@ mod tests {
         assert_eq!(share_lines[0], "QSolve LinkedIn #1 | 1s and flawless");
         assert_eq!(
             share_lines[1],
-            "First \u{1f451}s: \u{1F7E8} \u{2B1C} \u{1F7EA}"
+            "First \u{1f451}s: \u{1F7E5} \u{2B1C} \u{2B1B}"
         );
         assert_eq!(share_lines[2], "github.com/dschafer/qsolve");
 
@@ -120,8 +121,7 @@ mod tests {
 
     #[test]
     fn generate_share_content_puzzle_number() -> Result<()> {
-        let queens_file =
-            QueensFile::try_from_text_file(&PathBuf::from("games/linkedin-1-empty.txt"))?;
+        let queens_file = QueensFile::from_str(PUZZLE)?;
         let solve_state = SolveState::from(&queens_file);
         let heuristics = all_heuristics(solve_state.board);
         let state_iter_items =
