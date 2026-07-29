@@ -56,7 +56,7 @@ impl FromStr for InputSquares {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let lines = s.trim().lines().collect::<Vec<_>>();
+        let lines = s.trim_matches(['\n', '\r']).lines().collect::<Vec<_>>();
         let size = lines.len();
         for (line_num, &line) in lines.iter().enumerate() {
             ensure!(
@@ -115,7 +115,7 @@ impl FromStr for QueensFile {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let lines = s.trim().lines().collect::<Vec<_>>();
+        let lines = s.trim_matches(['\n', '\r']).lines().collect::<Vec<_>>();
         let lines_len = lines.len();
         ensure!(lines_len != 0, "Invalid solve state: no lines found.");
 
@@ -148,6 +148,15 @@ mod tests {
         let input_str = "Qxxx\nxx..\nx...\nx...";
         let input_squares = InputSquares::from_str(input_str)?;
         assert_eq!(input_squares.0.len(), 16);
+        Ok(())
+    }
+
+    #[test]
+    fn input_squares_preserve_edge_spaces() -> Result<()> {
+        let input_squares = InputSquares::from_str(" Qxx\nxx..\nx...\n    \n")?;
+
+        assert_eq!(input_squares.0[0], None);
+        assert!(input_squares.0[12..].iter().all(Option::is_none));
         Ok(())
     }
 
@@ -237,6 +246,15 @@ mod tests {
                 .len(),
             7
         );
+        Ok(())
+    }
+    #[test]
+    fn queens_file_preserves_edge_spaces() -> Result<()> {
+        let file = QueensFile::from_str("wwww\nkkkk\nrrrr\nbbbb\n\n    \n....\n____\n    \n")?;
+        let squares = &file.squares.as_ref().unwrap().0;
+
+        assert!(squares[..4].iter().all(Option::is_none));
+        assert!(squares[12..].iter().all(Option::is_none));
         Ok(())
     }
 }
