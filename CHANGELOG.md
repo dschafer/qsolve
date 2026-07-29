@@ -17,12 +17,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   [#15](https://github.com/dschafer/qsolve/issues/15) to be solved without
   forcing chains.
 
+### Changed
+
+- Make `--file-type=auto` use recognized image extensions to select image parsing.
+
 ### Fixed
 
 - Give out-of-range values passed to bitset-backed sets consistent, descriptive panics.
 - Return an error instead of panicking when an image contains no detectable grid.
 - Calculate queen and X pixel ratios against the inspected image area.
 - Preserve spaces used as blank markers at the edges of partial-state grids.
+- Restore the terminal cursor when animation exits with an error.
 
 ## [1.0.0] - 2025-04-23
 

@@ -1,4 +1,6 @@
 use assert_cmd::prelude::*;
+#[cfg(feature = "image")]
+use std::fs;
 use std::process::Command;
 
 #[test]
@@ -41,6 +43,23 @@ fn print_fails_on_bad_file() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("print").arg("games/bad-file-does-not-exist.txt");
     cmd.assert().failure();
 
+    Ok(())
+}
+
+#[cfg(feature = "image")]
+#[test]
+fn auto_uses_extension_to_select_parser() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::env::temp_dir().join(format!(
+        "qsolve-text-with-image-extension-{}.png",
+        std::process::id()
+    ));
+    fs::write(&path, "wwww\nwkkk\nrrrr\nbbbb")?;
+
+    let mut cmd = Command::cargo_bin("qsolve")?;
+    cmd.arg("print").arg(&path);
+    cmd.assert().failure();
+
+    fs::remove_file(path)?;
     Ok(())
 }
 
