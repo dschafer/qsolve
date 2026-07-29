@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, iter::FusedIterator};
 
 use itertools::Itertools;
 
@@ -396,10 +396,7 @@ impl CoordSet {
     /// assert_eq!(smallsum, CoordSet::from_iter(vec![(1,1), (2,2)]))
     /// ```
     pub fn iter(&self) -> CoordSetIter<'_> {
-        CoordSetIter {
-            coord_set: self,
-            idx: 0,
-        }
+        CoordSetIter::new(self)
     }
 }
 
@@ -414,7 +411,18 @@ impl Extend<Coord> for CoordSet {
 /// An iterator over [CoordSet].
 pub struct CoordSetIter<'a> {
     coord_set: &'a CoordSet,
-    idx: usize,
+    row: usize,
+    remaining: SetBits,
+}
+
+impl<'a> CoordSetIter<'a> {
+    fn new(coord_set: &'a CoordSet) -> Self {
+        Self {
+            coord_set,
+            row: 0,
+            remaining: coord_set.0[0],
+        }
+    }
 }
 
 impl<'a> IntoIterator for &'a CoordSet {
@@ -423,10 +431,7 @@ impl<'a> IntoIterator for &'a CoordSet {
     type IntoIter = CoordSetIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        CoordSetIter {
-            coord_set: self,
-            idx: 0,
-        }
+        CoordSetIter::new(self)
     }
 }
 
@@ -434,22 +439,40 @@ impl Iterator for CoordSetIter<'_> {
     type Item = Coord;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.idx < MAX_SET_SIZE * MAX_SET_SIZE {
-            let a = self.idx / MAX_SET_SIZE;
-            let b = self.idx % MAX_SET_SIZE;
-            if ((self.coord_set.0[a] >> (b)) & 1) == 1 {
-                self.idx += 1;
-                return Some((a, b));
-            }
-            self.idx += 1;
+        if self.row == MAX_SET_SIZE {
+            return None;
         }
-        None
+        loop {
+            if self.remaining != 0 {
+                let column = self.remaining.trailing_zeros() as usize;
+                self.remaining &= self.remaining - 1;
+                return Some((self.row, column));
+            }
+
+            self.row += 1;
+            if self.row == MAX_SET_SIZE {
+                return None;
+            }
+            self.remaining = self.coord_set.0[self.row];
+        }
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(MAX_SET_SIZE * MAX_SET_SIZE - self.idx))
+        if self.row == MAX_SET_SIZE {
+            return (0, Some(0));
+        }
+        let remaining = self.remaining.count_ones() as usize
+            + self.coord_set.0[(self.row + 1)..]
+                .iter()
+                .map(|bits| bits.count_ones() as usize)
+                .sum::<usize>();
+        (remaining, Some(remaining))
     }
 }
+
+impl ExactSizeIterator for CoordSetIter<'_> {}
+
+impl FusedIterator for CoordSetIter<'_> {}
 
 #[cfg(test)]
 mod tests {
@@ -500,7 +523,11 @@ mod tests {
         assert!(!cs.is_empty());
         assert!(cs.contains(&(0, 0)));
         assert!(!cs.contains(&(5, 5)));
-        assert_eq!(cs.iter().collect::<Vec<_>>(), vec![(0, 0), (1, 1), (2, 4)]);
+        let mut iter = cs.iter();
+        assert_eq!(iter.len(), 3);
+        assert_eq!(iter.next(), Some((0, 0)));
+        assert_eq!(iter.len(), 2);
+        assert_eq!(iter.collect::<Vec<_>>(), vec![(1, 1), (2, 4)]);
         assert_eq!(format!("{cs}"), "[(0, 0), (1, 1), (2, 4)]");
         cs.extend([(5, 5)]);
         assert!(cs.contains(&(5, 5)));
@@ -510,6 +537,12 @@ mod tests {
             cs.union(&other),
             CoordSet::from_iter([(0, 0), (1, 1), (2, 4), (5, 5), (6, 6)])
         );
+
+        let empty = CoordSet::default();
+        let mut empty_iter = empty.iter();
+        assert_eq!(empty_iter.next(), None);
+        assert_eq!(empty_iter.next(), None);
+        assert_eq!(empty_iter.len(), 0);
     }
 
     #[test]
