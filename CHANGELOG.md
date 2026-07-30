@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `cli` and `image` Cargo features, enabled by default, so library users can
   exclude the CLI or image support and their dependencies.
 - Add Windows support by replacing `termion` with `crossterm`.
+- Add a heuristic for two adjacent rows or columns that must contain a queen of
+  a particular color, allowing puzzles such as
+  [#15](https://github.com/dschafer/qsolve/issues/15) to be solved without
+  forcing chains.
 
 ## [1.0.0] - 2025-04-23
 
