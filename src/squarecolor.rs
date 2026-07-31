@@ -122,9 +122,9 @@ impl From<SquareColor> for AnsiColors {
     }
 }
 
-impl Display for SquareColor {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        let c = match self {
+impl From<SquareColor> for char {
+    fn from(value: SquareColor) -> Self {
+        match value {
             SquareColor::Black => 'k',
             SquareColor::Red => 'r',
             SquareColor::Green => 'g',
@@ -141,8 +141,13 @@ impl Display for SquareColor {
             SquareColor::BrightMagenta => 'M',
             SquareColor::BrightCyan => 'C',
             SquareColor::BrightWhite => 'W',
-        };
-        write!(f, "{c}")
+        }
+    }
+}
+
+impl Display for SquareColor {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", char::from(*self))
     }
 }
 
