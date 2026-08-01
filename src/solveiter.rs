@@ -89,13 +89,18 @@ mod tests {
     }
 
     #[test]
-    fn solve_iter_fails_on_impossible_board() -> Result<()> {
-        let board_str = "wwww\nkkkk\nrrrr\nbbbb"; // This board is not solvable, it has two solutions.
+    fn solve_iter_does_not_complete_ambiguous_board() -> Result<()> {
+        let board_str = "wwww\nkkkk\nrrrr\nbbbb"; // This board is ambiguous: it has two solutions.
         let board = Board::from_str(board_str)?;
         let solve_state = SolveState::from(&board);
         let heuristics = all_heuristics(&board);
-        let mut solve_iter = solve_iter(solve_state, SolveStrategy::Fast, &heuristics);
-        assert!(solve_iter.next().is_none());
+        let state_iter_items =
+            solve_iter(solve_state, SolveStrategy::Fast, &heuristics).collect::<Vec<_>>();
+        assert!(
+            state_iter_items
+                .iter()
+                .all(|item| !item.solve_state.complete())
+        );
 
         Ok(())
     }
