@@ -312,6 +312,24 @@ impl CoordSet {
         self.0[c.0] |= 1 << c.1
     }
 
+    /// Efficiently computes the union between two CoordSets.
+    ///
+    /// # Examples
+    /// ```
+    /// # use qsolve::datastructure::CoordSet;
+    /// let cs1 = CoordSet::from_iter(vec![(1,1), (2,2), (3,3), (4,4)]);
+    /// let cs2 = CoordSet::from_iter(vec![(3,3), (4,4), (5,5), (6,6)]);
+    /// let union = cs1.union(&cs2);
+    /// assert_eq!(union, CoordSet::from_iter(vec![(1,1), (2,2), (3,3), (4,4), (5,5), (6,6)]))
+    /// ```
+    pub fn union<'a>(&'a self, other: &'a CoordSet) -> CoordSet {
+        let mut new_set = CoordSet::default();
+        for a in 0..16 {
+            new_set.0[a] = self.0[a] | other.0[a];
+        }
+        new_set
+    }
+
     /// Efficiently computes the intersection between two CoordSets.
     ///
     /// # Examples
@@ -436,5 +454,11 @@ mod tests {
         assert_eq!(format!("{cs}"), "[(0, 0), (1, 1), (2, 4)]");
         cs.extend([(5, 5)]);
         assert!(cs.contains(&(5, 5)));
+
+        let other = CoordSet::from_iter([(2, 4), (6, 6)]);
+        assert_eq!(
+            cs.union(&other),
+            CoordSet::from_iter([(0, 0), (1, 1), (2, 4), (5, 5), (6, 6)])
+        );
     }
 }

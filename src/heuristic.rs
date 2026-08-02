@@ -5,7 +5,6 @@ use crate::{
     board::Board,
     datastructure::{Coord, CoordSet, LineSet, SquareColorSet},
     solvestate::{SolveState, SolveStrategy, SquareVal},
-    squarecolor::SquareColor,
 };
 
 #[derive(Debug, Eq, PartialEq)]
@@ -159,36 +158,15 @@ pub fn all_heuristics(board: &Board) -> Vec<Box<dyn Heuristic>> {
         }) as _
     }));
 
-    for (first, second) in (0..board.size()).tuple_windows() {
-        let rows = [board.row_coords(first), board.row_coords(second)];
-        v.extend(
-            rows.iter()
-                .flatten()
-                .map(|coord| board.color(&coord))
-                .unique()
-                .map(|color| {
-                    Box::new(TwoLinesRequireColor {
-                        lines: rows,
-                        color,
-                        desc: format!("Rows {} and {}", first + 1, second + 1),
-                    }) as _
-                }),
-        );
-
-        let cols = [board.col_coords(first), board.col_coords(second)];
-        v.extend(
-            cols.iter()
-                .flatten()
-                .map(|coord| board.color(&coord))
-                .unique()
-                .map(|color| {
-                    Box::new(TwoLinesRequireColor {
-                        lines: cols,
-                        color,
-                        desc: format!("Cols {} and {}", first + 1, second + 1),
-                    }) as _
-                }),
-        );
+    for (first, second) in (0..board.size()).tuple_combinations() {
+        v.push(Box::new(TwoLinesEliminateSquares {
+            lines: [board.row_coords(first), board.row_coords(second)],
+            desc: format!("Rows {} and {}", first + 1, second + 1),
+        }));
+        v.push(Box::new(TwoLinesEliminateSquares {
+            lines: [board.col_coords(first), board.col_coords(second)],
+            desc: format!("Cols {} and {}", first + 1, second + 1),
+        }));
     }
 
     v.extend(
@@ -322,13 +300,12 @@ impl Heuristic for AllPossibilitiesEliminateSquare {
 }
 
 #[derive(Debug)]
-struct TwoLinesRequireColor {
+struct TwoLinesEliminateSquares {
     lines: [CoordSet; 2],
-    color: SquareColor,
     desc: String,
 }
 
-impl Heuristic for TwoLinesRequireColor {
+impl Heuristic for TwoLinesEliminateSquares {
     fn seen_coords(&self, solve_state: &SolveState) -> CoordSet {
         self.lines
             .iter()
@@ -338,14 +315,14 @@ impl Heuristic for TwoLinesRequireColor {
     }
 
     fn changes(&self, solve_state: &SolveState) -> Option<Changes> {
-        trace!("Heuristic Start: TwoLinesRequireColor {self:?}");
+        trace!("Heuristic Start: TwoLinesEliminateSquares {self:?}");
         if self
             .lines
             .iter()
             .flatten()
             .any(|coord| solve_state.square(&coord) == Some(SquareVal::Queen))
         {
-            trace!("Heuristic Invalid: TwoLinesRequireColor {self:?}");
+            trace!("Heuristic Invalid: TwoLinesEliminateSquares {self:?}");
             return None;
         }
 
@@ -354,46 +331,41 @@ impl Heuristic for TwoLinesRequireColor {
                 .filter(|&coord| solve_state.square(&coord).is_none())
                 .collect::<Vec<_>>()
         });
-        let legal_pairs = candidates[0]
+        let eliminated = candidates[0]
             .iter()
             .copied()
             .cartesian_product(candidates[1].iter().copied())
             .filter(|(first, second)| !solve_state.board.queen_borders(first).contains(second))
-            .collect::<Vec<_>>();
-        if legal_pairs.is_empty() {
-            trace!("Heuristic Invalid: TwoLinesRequireColor {self:?}");
+            .map(|(first, second)| {
+                solve_state
+                    .board
+                    .queen_borders(&first)
+                    .union(&solve_state.board.queen_borders(&second))
+            })
+            .reduce(|acc, borders| acc.intersection(&borders));
+        let Some(eliminated) = eliminated else {
+            trace!("Heuristic Invalid: TwoLinesEliminateSquares {self:?}");
             return None;
-        }
-        if legal_pairs.iter().any(|(first, second)| {
-            solve_state.board.color(first) != self.color
-                && solve_state.board.color(second) != self.color
-        }) {
-            trace!("Heuristic Invalid: TwoLinesRequireColor {self:?}");
-            return None;
-        }
+        };
 
-        trace!("Heuristic Success: TwoLinesRequireColor {self:?}");
-        let line_coords = CoordSet::from_iter(self.lines.iter().flatten());
-        let x = solve_state
-            .board
-            .coords_for_color(&self.color)
+        trace!("Heuristic Success: TwoLinesEliminateSquares {self:?}");
+        let x = eliminated
             .iter()
-            .filter(|coord| !line_coords.contains(coord))
             .filter(|coord| solve_state.square(coord).is_none())
             .collect::<CoordSet>();
         if x.is_empty() {
-            trace!("Heuristic No-op: TwoLinesRequireColor {self:?}");
+            trace!("Heuristic No-op: TwoLinesEliminateSquares {self:?}");
             None
         } else {
-            trace!("Heuristic Return: TwoLinesRequireColor {self:?}");
+            trace!("Heuristic Return: TwoLinesEliminateSquares {self:?}");
             Some(Changes::AddX { x })
         }
     }
 
     fn description(&self) -> String {
         format!(
-            "At most one non-'{:?}' queen can be placed in {}.\nOne queen there must be '{:?}'; x out that color outside {}.",
-            self.color, self.desc, self.color, self.desc
+            "Every legal queen pair for {} eliminates certain squares.\nx out those squares.",
+            self.desc
         )
     }
 }
@@ -694,58 +666,93 @@ mod tests {
     }
 
     #[test]
-    fn two_rows_require_color() -> Result<()> {
-        let input_str = "BmYYYrr\nBmYYYYr\nBmmYYYr\nBmmMkYr\nBBBMkMb\nBBBMMMb\nBBBMbbb\n\n.x.xx..\n.x.xxx.\nx.xxxx.\nx.xx.x.\n.xxx.x.\n.xx.xx.\n.xx.x..";
+    fn two_rows_eliminate_square_for_different_reasons() -> Result<()> {
+        let input_str = "kkkbbmm\nkkkbbcm\nkkkbccr\nkkkgrrr\ngggggrr\ngyygggr\nyyyyrrr\n\nxxx.x..\nxxx.xx.\nxxxx..x\n...xxxx\n.x.xx..\n.x.xxx.\nx..x...";
         let queens_file = QueensFile::from_str(input_str)?;
         let ss = SolveState::from(&queens_file);
         assert!(ss.is_valid());
-        let heuristic = TwoLinesRequireColor {
+        let heuristic = TwoLinesEliminateSquares {
             lines: [ss.board.row_coords(1), ss.board.row_coords(2)],
-            color: SquareColor::Red,
             desc: String::new(),
         };
         assert_eq!(
             heuristic.changes(&ss),
             Some(Changes::AddX {
-                x: CoordSet::from_iter([(0, 5), (0, 6), (3, 6)])
+                x: CoordSet::from_iter([(0, 5)])
             })
         );
         assert_eq!(
             heuristic.seen_coords(&ss),
-            CoordSet::from_iter([(1, 0), (1, 2), (1, 6), (2, 1), (2, 6)])
+            CoordSet::from_iter([(1, 3), (1, 6), (2, 4), (2, 5)])
         );
         Ok(())
     }
 
     #[test]
-    fn two_columns_require_color() -> Result<()> {
-        let input_str = "BBBBBBB\nmmmmBBB\nYYmmBBB\nYYYMMMM\nYYYkkMb\nrYYYMMb\nrrrrbbb\n\n..xx...\nxx..xxx\n..xxxxx\nxxxxx..\nxxx..xx\n.xxxxx.\n.......";
+    fn two_nonadjacent_rows_eliminate_square() -> Result<()> {
+        let input_str = "rrrrrgm\nrrrrggm\nrrkkggg\nrrkkkkk\nbrkkkkk\nbycckkk\nbyyyykk\n\nxxxxxxQ\nx....xx\nx.xxx.x\nxx..x.x\nQxxxxxx\nxx..xxx\nx.xx.xx";
         let queens_file = QueensFile::from_str(input_str)?;
         let ss = SolveState::from(&queens_file);
         assert!(ss.is_valid());
-        let heuristic = TwoLinesRequireColor {
-            lines: [ss.board.col_coords(1), ss.board.col_coords(2)],
-            color: SquareColor::Red,
+        let heuristic = TwoLinesEliminateSquares {
+            lines: [ss.board.row_coords(1), ss.board.row_coords(6)],
             desc: String::new(),
         };
         assert_eq!(
             heuristic.changes(&ss),
             Some(Changes::AddX {
-                x: CoordSet::from_iter([(5, 0), (6, 0), (6, 3)])
+                x: CoordSet::from_iter([(2, 1)])
             })
         );
         Ok(())
     }
 
     #[test]
-    fn two_lines_require_color_needs_legal_pair() -> Result<()> {
+    fn two_lines_eliminate_unpairable_candidate() -> Result<()> {
+        let input_str = "rkkk\nbbbb\nrrrr\ncccc\n\n..xx\nxxxx\n.xxx\nxxxx";
+        let queens_file = QueensFile::from_str(input_str)?;
+        let ss = SolveState::from(&queens_file);
+        assert!(ss.is_valid());
+        let heuristic = TwoLinesEliminateSquares {
+            lines: [ss.board.row_coords(0), ss.board.row_coords(2)],
+            desc: String::new(),
+        };
+        assert_eq!(
+            heuristic.changes(&ss),
+            Some(Changes::AddX {
+                x: CoordSet::from_iter([(0, 0)])
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn two_columns_eliminate_squares() -> Result<()> {
+        let input_str = "bccggggg\nbbbgrrgg\nbrbgrrrr\nkrrrryrr\nkkrkkyyy\nkkkkkkyy\nkkmmkkky\nkmmmkkww\n\nx..xxxxx\n.xx.xx..\n.xx.xxxx\nx.....xx\nxx.xxxx.\nxxxx..xx\nxx..xxxx\nxxxxxx..";
+        let queens_file = QueensFile::from_str(input_str)?;
+        let ss = SolveState::from(&queens_file);
+        assert!(ss.is_valid());
+        let heuristic = TwoLinesEliminateSquares {
+            lines: [ss.board.col_coords(4), ss.board.col_coords(5)],
+            desc: String::new(),
+        };
+        assert_eq!(
+            heuristic.changes(&ss),
+            Some(Changes::AddX {
+                x: CoordSet::from_iter([(3, 1), (3, 2), (3, 3)])
+            })
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn two_lines_eliminate_squares_needs_legal_pair() -> Result<()> {
         let input_str = "rrrr\nkkkk\nbbbb\ncccc\n\n.xxx\nx.xx\nxx.x\nxxxx";
         let queens_file = QueensFile::from_str(input_str)?;
         let ss = SolveState::from(&queens_file);
         assert!(ss.is_valid());
-        let heuristic = TwoLinesRequireColor {
+        let heuristic = TwoLinesEliminateSquares {
             lines: [ss.board.row_coords(0), ss.board.row_coords(1)],
-            color: SquareColor::Blue,
             desc: String::new(),
         };
         assert_eq!(heuristic.changes(&ss), None);
@@ -753,14 +760,13 @@ mod tests {
     }
 
     #[test]
-    fn two_lines_require_color_ignores_solved_lines() -> Result<()> {
+    fn two_lines_eliminate_squares_ignores_solved_lines() -> Result<()> {
         let input_str = "rrrr\nkkkk\nbbbb\ncccc\n\nQ...\n....\n....\n....";
         let queens_file = QueensFile::from_str(input_str)?;
         let ss = SolveState::from(&queens_file);
         assert!(ss.is_valid());
-        let heuristic = TwoLinesRequireColor {
+        let heuristic = TwoLinesEliminateSquares {
             lines: [ss.board.row_coords(0), ss.board.row_coords(1)],
-            color: SquareColor::Blue,
             desc: String::new(),
         };
         assert_eq!(heuristic.changes(&ss), None);
@@ -768,14 +774,13 @@ mod tests {
     }
 
     #[test]
-    fn two_lines_require_color_ignores_non_required_color() -> Result<()> {
-        let input_str = "BmYYYrr\nBmYYYYr\nBmmYYYr\nBmmMkYr\nBBBMkMb\nBBBMMMb\nBBBMbbb\n\n.x.xx..\n.x.xxx.\nx.xxxx.\nx.xx.x.\n.xxx.x.\n.xx.xx.\n.xx.x..";
+    fn two_lines_eliminate_squares_ignores_noop() -> Result<()> {
+        let input_str = "rrrr\nkkkk\nbbbb\ncccc";
         let queens_file = QueensFile::from_str(input_str)?;
         let ss = SolveState::from(&queens_file);
         assert!(ss.is_valid());
-        let heuristic = TwoLinesRequireColor {
-            lines: [ss.board.row_coords(1), ss.board.row_coords(2)],
-            color: SquareColor::BrightBlue,
+        let heuristic = TwoLinesEliminateSquares {
+            lines: [ss.board.row_coords(0), ss.board.row_coords(1)],
             desc: String::new(),
         };
         assert_eq!(heuristic.changes(&ss), None);
@@ -783,30 +788,13 @@ mod tests {
     }
 
     #[test]
-    fn two_lines_require_color_ignores_noop() -> Result<()> {
-        let input_str = "BmYYYrr\nBmYYYYr\nBmmYYYr\nBmmMkYr\nBBBMkMb\nBBBMMMb\nBBBMbbb\n\n.x.xxxx\n.x.xxx.\nx.xxxx.\nx.xx.xx\n.xxx.x.\n.xx.xx.\n.xx.x..";
-        let queens_file = QueensFile::from_str(input_str)?;
-        let ss = SolveState::from(&queens_file);
-        assert!(ss.is_valid());
-        let heuristic = TwoLinesRequireColor {
-            lines: [ss.board.row_coords(1), ss.board.row_coords(2)],
-            color: SquareColor::Red,
-            desc: String::new(),
-        };
-        assert_eq!(heuristic.changes(&ss), None);
-        Ok(())
-    }
-
-    #[test]
-    fn two_lines_require_color_description() {
-        let heuristic = TwoLinesRequireColor {
+    fn two_lines_eliminate_squares_description() {
+        let heuristic = TwoLinesEliminateSquares {
             lines: [CoordSet::default(); 2],
-            color: SquareColor::Red,
             desc: "Rows 2 and 3".to_string(),
         };
         let description = heuristic.description();
         assert!(description.contains("Rows 2 and 3"));
-        assert!(description.contains("Red"));
         assert_eq!(description.lines().count(), 2);
     }
 
