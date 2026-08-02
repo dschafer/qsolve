@@ -120,7 +120,7 @@ pub fn analyze_grid_image(img: &RgbImage) -> Result<QueensFile> {
 
         let rgb_color = get_dominant_color(&view).with_context(|| {
             format!(
-                "Count not find dominant color in square at offset {:?}",
+                "Could not find dominant color in square at offset {:?}",
                 view.offsets()
             )
         })?;
