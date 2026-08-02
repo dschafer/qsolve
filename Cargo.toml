@@ -11,8 +11,10 @@ license = "MIT OR Apache-2.0"
 keywords = ["Queens", "puzzle", "solver"]
 categories = ["command-line-utilities"]
 exclude = [
+    "benches/*",
     "media/*",
     "games/*",
+    "tests/*",
 ]
 
 [badges]

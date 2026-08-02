@@ -55,7 +55,7 @@ https://github.com/user-attachments/assets/6b4d6798-63be-4000-b850-c8a45008dd1d
 Basic usage of the library looks something like this:
 
 ```rust
-use std::path::PathBuf;
+use std::str::FromStr;
 use qsolve::heuristic::all_heuristics;
 use qsolve::file::QueensFile;
 use qsolve::solveiter::solve_iter;
@@ -63,7 +63,7 @@ use qsolve::solvestate::{SolveState, SolveStrategy};
 
 fn solve() -> Result<(), Box<dyn std::error::Error>> {
     // Parse a text file containing a Queens puzzle.
-    let queens_file = QueensFile::try_from_text_file(&PathBuf::from("games/linkedin-1-empty.txt"))?;
+    let queens_file = QueensFile::from_str("wwww\nwkkk\nrrrr\nbbbb")?;
 
     // Generate the initial solve state and print it.
     let solve_state = SolveState::from(&queens_file);
