@@ -4,6 +4,25 @@ use itertools::Itertools;
 
 use crate::squarecolor::{ALL_SQUARE_COLORS, SquareColor};
 
+type SetBits = u16;
+
+/// The maximum number of rows, columns, or colors supported by the bitset-backed data structures.
+pub const MAX_SET_SIZE: usize = SetBits::BITS as usize;
+
+fn assert_line_in_bounds(line: usize) {
+    assert!(
+        line < MAX_SET_SIZE,
+        "line index {line} is out of range for LineSet; expected 0..{MAX_SET_SIZE}"
+    );
+}
+
+fn assert_coord_in_bounds(coord: Coord) {
+    assert!(
+        coord.0 < MAX_SET_SIZE && coord.1 < MAX_SET_SIZE,
+        "coordinate {coord:?} is out of range for CoordSet; each component must be in 0..{MAX_SET_SIZE}"
+    );
+}
+
 /// A 0-indexed representation of a coordinate on a [Board][crate::board::Board].
 ///
 /// The first element of the tuple represents the row; the
@@ -21,11 +40,10 @@ pub type Coord = (usize, usize);
 ///
 /// # Design
 ///
-/// Since we have at most 16 colors. we can just use a [u16] bitfield
-/// to store which items are in the set efficiently.
+/// Each color maps to one bit in an integer bitfield.
 ///
 /// This is faster than using the bitvec package based on testing.
-pub struct SquareColorSet(u16);
+pub struct SquareColorSet(SetBits);
 
 impl Display for SquareColorSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -103,18 +121,21 @@ impl SquareColorSet {
 ///
 /// # Design
 ///
-/// Since we have at most 16 lines, we can just use a [u16] bitfield
-/// to store which items are in the set efficiently.
+/// Each line maps to one bit in an integer bitfield.
 ///
 /// This is faster than using the bitvec package based on testing.
-pub struct LineSet(u16);
+///
+/// Operations panic when passed a line outside `0..MAX_SET_SIZE`.
+pub struct LineSet(SetBits);
 
 impl Display for LineSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{:?}",
-            (0..16).filter(|c| self.contains(c)).collect::<Vec<_>>()
+            (0..MAX_SET_SIZE)
+                .filter(|c| self.contains(c))
+                .collect::<Vec<_>>()
         )
     }
 }
@@ -123,7 +144,8 @@ impl FromIterator<usize> for LineSet {
     fn from_iter<T: IntoIterator<Item = usize>>(iter: T) -> Self {
         let mut bits = 0;
         for line in iter {
-            bits |= 1 << line
+            assert_line_in_bounds(line);
+            bits |= 1 << line;
         }
         LineSet(bits)
     }
@@ -166,7 +188,12 @@ impl LineSet {
     /// assert!(ls.contains(&1));
     /// assert!(!ls.contains(&3));
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics when `line` is outside `0..MAX_SET_SIZE`.
     pub fn contains(&self, line: &usize) -> bool {
+        assert_line_in_bounds(*line);
         ((self.0 >> *line) & 1) == 1
     }
 
@@ -197,7 +224,7 @@ impl Iterator for LineSetIter<'_> {
     type Item = usize;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.idx < 16 {
+        while self.idx < MAX_SET_SIZE {
             if self.line_set.contains(&self.idx) {
                 self.idx += 1;
                 return Some(self.idx - 1);
@@ -208,26 +235,27 @@ impl Iterator for LineSetIter<'_> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(16 - self.idx))
+        (0, Some(MAX_SET_SIZE - self.idx))
     }
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 /// An efficient implementation of a set for coords.
 ///
-/// Since we have at most 16*16=256 coords, we can just use 16 [u16]s bitfield
-/// to store which items are in the set efficiently.
+/// Each row has an integer bitfield with one bit per column.
 ///
 /// This is faster than using the bitvec package based on testing.
-pub struct CoordSet([u16; 16]);
+///
+/// Operations panic when either coordinate component is outside `0..MAX_SET_SIZE`.
+pub struct CoordSet([SetBits; MAX_SET_SIZE]);
 
 impl Display for CoordSet {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{:?}",
-            (0..16)
-                .cartesian_product(0..16)
+            (0..MAX_SET_SIZE)
+                .cartesian_product(0..MAX_SET_SIZE)
                 .filter(|c| self.contains(c))
                 .collect::<Vec<_>>()
         )
@@ -236,21 +264,21 @@ impl Display for CoordSet {
 
 impl<'a> FromIterator<&'a Coord> for CoordSet {
     fn from_iter<T: IntoIterator<Item = &'a Coord>>(iter: T) -> Self {
-        let mut bits = [0; 16];
+        let mut coord_set = CoordSet::default();
         for coord in iter {
-            bits[coord.0] |= 1 << coord.1
+            coord_set.add(*coord);
         }
-        CoordSet(bits)
+        coord_set
     }
 }
 
 impl FromIterator<Coord> for CoordSet {
     fn from_iter<T: IntoIterator<Item = Coord>>(iter: T) -> Self {
-        let mut bits = [0; 16];
+        let mut coord_set = CoordSet::default();
         for coord in iter {
-            bits[coord.0] |= 1 << coord.1
+            coord_set.add(coord);
         }
-        CoordSet(bits)
+        coord_set
     }
 }
 
@@ -264,7 +292,7 @@ impl CoordSet {
     /// assert_eq!(cs.len(), 2);
     /// ```
     pub fn len(&self) -> usize {
-        self.0.map(u16::count_ones).iter().sum::<u32>() as usize
+        self.0.map(SetBits::count_ones).iter().sum::<u32>() as usize
     }
 
     /// Whether the set is empty.
@@ -292,7 +320,12 @@ impl CoordSet {
     /// assert!(cs.contains(&(1,1)));
     /// assert!(!cs.contains(&(1,3)));
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics when either component of `coord` is outside `0..MAX_SET_SIZE`.
     pub fn contains(&self, coord: &Coord) -> bool {
+        assert_coord_in_bounds(*coord);
         ((self.0[coord.0] >> (coord.1)) & 1) == 1
     }
 
@@ -308,8 +341,13 @@ impl CoordSet {
     /// assert_eq!(cs.len(), 2);
     /// assert!(cs.contains(&(1,3)));
     /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics when either component of `c` is outside `0..MAX_SET_SIZE`.
     pub fn add(&mut self, c: Coord) {
-        self.0[c.0] |= 1 << c.1
+        assert_coord_in_bounds(c);
+        self.0[c.0] |= 1 << c.1;
     }
 
     /// Efficiently computes the union between two CoordSets.
@@ -324,7 +362,7 @@ impl CoordSet {
     /// ```
     pub fn union<'a>(&'a self, other: &'a CoordSet) -> CoordSet {
         let mut new_set = CoordSet::default();
-        for a in 0..16 {
+        for a in 0..MAX_SET_SIZE {
             new_set.0[a] = self.0[a] | other.0[a];
         }
         new_set
@@ -342,7 +380,7 @@ impl CoordSet {
     /// ```
     pub fn intersection<'a>(&'a self, other: &'a CoordSet) -> CoordSet {
         let mut new_set = CoordSet::default();
-        for a in 0..16 {
+        for a in 0..MAX_SET_SIZE {
             new_set.0[a] = self.0[a] & other.0[a];
         }
         new_set
@@ -396,9 +434,9 @@ impl Iterator for CoordSetIter<'_> {
     type Item = Coord;
 
     fn next(&mut self) -> Option<Self::Item> {
-        while self.idx < 256 {
-            let a = self.idx / 16;
-            let b = self.idx % 16;
+        while self.idx < MAX_SET_SIZE * MAX_SET_SIZE {
+            let a = self.idx / MAX_SET_SIZE;
+            let b = self.idx % MAX_SET_SIZE;
             if ((self.coord_set.0[a] >> (b)) & 1) == 1 {
                 self.idx += 1;
                 return Some((a, b));
@@ -409,7 +447,7 @@ impl Iterator for CoordSetIter<'_> {
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        (0, Some(256 - self.idx))
+        (0, Some(MAX_SET_SIZE * MAX_SET_SIZE - self.idx))
     }
 }
 
@@ -444,6 +482,18 @@ mod tests {
     }
 
     #[test]
+    #[should_panic(expected = "is out of range for LineSet")]
+    fn line_set_rejects_out_of_range_values() {
+        let _ = LineSet::from_iter([MAX_SET_SIZE]);
+    }
+
+    #[test]
+    #[should_panic(expected = "is out of range for LineSet")]
+    fn line_set_rejects_out_of_range_queries() {
+        LineSet::default().contains(&MAX_SET_SIZE);
+    }
+
+    #[test]
     fn coord_set() {
         let mut cs = CoordSet::from_iter([(0, 0), (1, 1), (0, 0), (2, 4)]);
         assert_eq!(cs.len(), 3);
@@ -460,5 +510,23 @@ mod tests {
             cs.union(&other),
             CoordSet::from_iter([(0, 0), (1, 1), (2, 4), (5, 5), (6, 6)])
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "is out of range for CoordSet")]
+    fn coord_set_rejects_out_of_range_values() {
+        let _ = CoordSet::from_iter([(MAX_SET_SIZE, 0)]);
+    }
+
+    #[test]
+    #[should_panic(expected = "is out of range for CoordSet")]
+    fn coord_set_rejects_out_of_range_queries() {
+        CoordSet::default().contains(&(0, MAX_SET_SIZE));
+    }
+
+    #[test]
+    #[should_panic(expected = "is out of range for CoordSet")]
+    fn coord_set_rejects_out_of_range_additions() {
+        CoordSet::default().add((MAX_SET_SIZE, 0));
     }
 }
