@@ -191,7 +191,9 @@ fn get_other_ratio(view: &SubImage<&RgbImage>, rgb_color: &Rgb<u8>) -> f32 {
         .pixels()
         .filter(|(_, _, p)| color_distance(*p, *rgb_color) > COLOR_DISTANCE_THRESHOLD)
         .count();
-    (other_count as f32) / ((width * height) as f32)
+    let center_width = width - (2 * width / BORDER_DENOM);
+    let center_height = height - (2 * height / BORDER_DENOM);
+    (other_count as f32) / ((center_width * center_height) as f32)
 }
 
 fn find_grid_ranges(img: &RgbImage, range: Range<u32>, is_vertical: bool) -> Vec<Range<u32>> {
@@ -208,6 +210,9 @@ fn find_grid_ranges(img: &RgbImage, range: Range<u32>, is_vertical: bool) -> Vec
         });
     grid_ranges.extend(grid_ranges_iter);
     let grid_ranges_len = grid_ranges.len();
+    if grid_ranges_len == 0 {
+        return grid_ranges;
+    }
     let median_grid_length = grid_ranges
         .clone()
         .select_nth_unstable_by(grid_ranges_len / 2, |a, b| a.len().cmp(&b.len()))
@@ -317,4 +322,25 @@ fn map_image_to_square_colors(image_colors: &[Rgb<u8>]) -> [SquareColor; MAX_UNI
     }
 
     image_to_square_color
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn analyze_grid_image_rejects_blank_image() {
+        let img = RgbImage::from_pixel(64, 64, Rgb([255, 255, 255]));
+        assert!(analyze_grid_image(&img).is_err());
+    }
+
+    #[test]
+    fn other_ratio_uses_only_the_inspected_area() {
+        let white = Rgb([255, 255, 255]);
+        let mut img = RgbImage::from_pixel(10, 10, white);
+        img.put_pixel(0, 0, Rgb([0, 0, 0]));
+        img.put_pixel(5, 5, Rgb([0, 0, 0]));
+
+        assert_eq!(get_other_ratio(&img.view(0, 0, 10, 10), &white), 1.0 / 64.0);
+    }
 }
