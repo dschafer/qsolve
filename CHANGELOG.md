@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Cache board color-coordinate lookups to avoid repeated full-board scans.
 - Make `--file-type=auto` use recognized image extensions to select image parsing.
 
 ### Fixed
